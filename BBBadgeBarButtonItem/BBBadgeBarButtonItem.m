@@ -19,6 +19,7 @@
 @implementation BBBadgeBarButtonItem {
     UIView *badgeContainer;
     UIGestureRecognizer *customActionGesture;
+    UIButton *imageButton;
 }
 
 
@@ -131,14 +132,16 @@
     container.backgroundColor = [UIColor clearColor];
     container.clipsToBounds = NO;
     
-    UIButton *button = [[UIButton alloc] initWithFrame:container.frame];
-    button.backgroundColor = [UIColor clearColor];
-    [button setImage:image forState:UIControlStateNormal];
-    [button addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
-
-    [container addSubview:button];
+    imageButton = [[UIButton alloc] initWithFrame:container.frame];
+    imageButton.backgroundColor = [UIColor clearColor];
+    imageButton.enabled = self.enabled;
+    [imageButton setImage:image forState:UIControlStateNormal];
+    
+    [container addSubview:imageButton];
     
     badgeContainer = container;
+    
+    [self setupButtonActionHandlerIfNeeded];
     
     return container;
 }
@@ -178,27 +181,37 @@
     
     customActionGesture = [[UITapGestureRecognizer alloc] init];
     [container addGestureRecognizer:customActionGesture];
-    [self setupGestureRecognizerIfNeeded];
+    [self setupButtonActionHandlerIfNeeded];
     
     return container;
+}
+
+- (void)setEnabled:(BOOL)enabled
+{
+    [super setEnabled:enabled];
+    imageButton.enabled = enabled;
 }
 
 - (void)setTarget:(id)target
 {
     [super setTarget:target];
-    [self setupGestureRecognizerIfNeeded];
+    [self setupButtonActionHandlerIfNeeded];
 }
 
 - (void)setAction:(SEL)action
 {
     [super setAction:action];
-    [self setupGestureRecognizerIfNeeded];
+    [self setupButtonActionHandlerIfNeeded];
 }
 
-- (void)setupGestureRecognizerIfNeeded
+- (void)setupButtonActionHandlerIfNeeded
 {
-    if (customActionGesture && self.action && self.target) {
-        [customActionGesture addTarget:self.target action:self.action];
+    if (self.action && self.target) {
+        if (imageButton) {
+            [imageButton addTarget:self.target action:self.action forControlEvents:UIControlEventTouchUpInside];
+        } else {
+            [customActionGesture addTarget:self.target action:self.action];
+        }
     }
 }
 
