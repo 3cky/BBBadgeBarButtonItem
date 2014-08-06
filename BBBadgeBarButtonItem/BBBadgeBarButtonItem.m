@@ -110,11 +110,12 @@
     // Default design initialization
     [[[self class] appearance] applyInvocationTo:self];
     
-    
-    if (!self.customView && self.title) {
-        self.customView = [self customViewWithTitle:self.title];
-    } else {
+    if (self.customView) {
         badgeContainer = self.customView;
+    } else if (self.title) {
+        self.customView = [self customViewWithTitle:self.title];
+    } else if (self.image) {
+        self.customView = [self customViewWithImage:self.image];
     }
     
     // Avoids badge to be clipped when animating its scale
@@ -122,6 +123,33 @@
     badgeContainer.clipsToBounds = NO;
     
     [self subscribeForUpdateNotifications];
+}
+
+- (UIView *)customViewWithImage:(UIImage *)image
+{
+    UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, image.size.width, image.size.height)];
+    container.backgroundColor = [UIColor clearColor];
+    container.clipsToBounds = NO;
+    
+    UIButton *button = [[UIButton alloc] initWithFrame:container.frame];
+    button.backgroundColor = [UIColor clearColor];
+    [button setImage:image forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(buttonPressed:) forControlEvents:UIControlEventTouchUpInside];
+
+    [container addSubview:button];
+    
+    badgeContainer = container;
+    
+    return container;
+}
+
+- (void)buttonPressed:(id)sender
+{
+    if (self.target && self.action) {
+        IMP imp = [self.target methodForSelector:self.action];
+        void (*func)(id, SEL, id) = (void *)imp;
+        func(self.target, self.action, sender);
+    }
 }
 
 - (UIView *)customViewWithTitle:(NSString *)title
@@ -169,7 +197,7 @@
 
 - (void)setupGestureRecognizerIfNeeded
 {
-    if (self.action && self.target) {
+    if (customActionGesture && self.action && self.target) {
         [customActionGesture addTarget:self.target action:self.action];
     }
 }
